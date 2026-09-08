@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from "motion/react";
+import { QRCodeSVG } from "qrcode.react";
 import { MapPin, Phone } from "lucide-react";
 
 import { ArchPanel, Divider } from "./ArchPanel";
@@ -52,6 +53,8 @@ export function Invitation({ payload }: { payload: ZarPayload }) {
   const mapsUrl = isValidMapsUrl(content.maps_url) ? content.maps_url!.trim() : null;
   const gallery = galleryUrls(content.gallery);
   const contacts = validContacts(content.contacts);
+  const publicUrl = text(payload.invitation?.public_url);
+  const qrLabel = text(content.qr_text) ?? "Our Invitation";
   const musicUrl = content.music_enabled === true ? text(content.music_url) : null;
   const relatives = text(content.relatives);
 
@@ -264,7 +267,7 @@ export function Invitation({ payload }: { payload: ZarPayload }) {
         <RsvpMirror />
       </ArchPanel>
 
-      {contacts.length > 0 && (
+      {(contacts.length > 0 || publicUrl) && (
         <ArchPanel title="Stay Connected" eyebrow="We'd love to hear from you">
           {contacts.length > 0 && (
             <div className="space-y-4">
@@ -302,6 +305,15 @@ export function Invitation({ payload }: { payload: ZarPayload }) {
                   </div>
                 );
               })}
+            </div>
+          )}
+          {publicUrl && (
+            <div className={contacts.length > 0 ? "mt-9 text-center" : "text-center"}>
+              <p className="zar-title text-xl text-zar-ink">{qrLabel}</p>
+              <p className="zar-eyebrow mt-1 text-zar-ink-soft">Scan to open</p>
+              <div className="mx-auto mt-5 w-fit rounded-xl border border-zar-gold-deep/40 bg-zar-ivory p-3">
+                <QRCodeSVG value={publicUrl} size={132} level="M" bgColor="#ffffff" fgColor="#1b1b1b" />
+              </div>
             </div>
           )}
         </ArchPanel>
