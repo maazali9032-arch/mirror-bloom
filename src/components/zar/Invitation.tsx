@@ -1,5 +1,4 @@
 import { motion, useReducedMotion } from "motion/react";
-import { QRCodeSVG } from "qrcode.react";
 import { MapPin, Phone } from "lucide-react";
 
 import { ArchPanel, Divider } from "./ArchPanel";
@@ -14,7 +13,7 @@ import {
   validContacts,
   whatsappHref,
 } from "@/lib/zar/invitation";
-import type { ZarPayload } from "@/lib/zar/types";
+import type { ZarContent, ZarPayload } from "@/lib/zar/types";
 
 function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   const reduced = !!useReducedMotion();
@@ -32,52 +31,42 @@ function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 
 export function Invitation({ payload }: { payload: ZarPayload }) {
   const reduced = !!useReducedMotion();
-  const content = payload.content ?? {};
+  const content: ZarContent = payload.content ?? {};
 
-  const groomName = text(content.groom?.name ?? content.groom_name);
-  const brideName = text(content.bride?.name ?? content.bride_name);
+  const groomName = text(content.groom_name);
+  const brideName = text(content.bride_name);
   const bothNames = Boolean(groomName && brideName);
   const weddingDate = formatDate(content.wedding_date);
+  const ceremonyTime = [text(content.start_time), text(content.end_time)].filter(Boolean).join(" – ");
   const invocation = text(content.invocation);
-  const message = text(content.invitation_message ?? content.message);
-
-  const groomPhoto = text(content.groom?.photo_url);
-  const bridePhoto = text(content.bride?.photo_url);
+  const groomPhoto = text(content.groom_photo_url);
+  const bridePhoto = text(content.bride_photo_url);
 
   const events = Array.isArray(content.events)
-    ? content.events.filter((e) => text(e?.title ?? e?.name))
+    ? content.events.filter((e) => text(e?.title ?? e?.name ?? e?.event_name))
     : [];
-  const venue = content.venue ?? null;
-  const venueName = text(venue?.name);
-  const venueAddress = text(venue?.address);
-  const venueCity = text(venue?.city);
-  const venueImage = text(venue?.image_url);
-  const mapsUrl = isValidMapsUrl(venue?.maps_url) ? venue!.maps_url!.trim() : null;
+  const venueName = text(content.venue_name);
+  const venueAddress = text(content.venue_address);
+  const venueCity = text(content.city);
+  const venueImage = text(content.venue_image_url);
+  const mapsUrl = isValidMapsUrl(content.maps_url) ? content.maps_url!.trim() : null;
   const gallery = galleryUrls(content.gallery);
   const contacts = validContacts(content.contacts);
-  const publicUrl = text(payload.invitation?.public_url);
-  const qrLabel = text(content.qr_label) ?? "Our Invitation";
-  const musicUrl = content.music?.enabled === false ? null : text(content.music?.url);
-  const relatives = Array.isArray(content.relatives)
-    ? content.relatives
-        .map((r) => (typeof r === "string" ? r : text(r?.name)))
-        .filter((r): r is string => Boolean(r))
-    : [];
+  const musicUrl = content.music_enabled === true ? text(content.music_url) : null;
+  const relatives = text(content.relatives);
 
   const parents = [
-    { side: "Groom's Parents", person: content.groom },
-    { side: "Bride's Parents", person: content.bride },
+    { side: "Groom's Parents", names: text(content.groom_parents) },
+    { side: "Bride's Parents", names: text(content.bride_parents) },
   ]
-    .map((p) => ({
-      side: p.side,
-      names: [text(p.person?.father_name), text(p.person?.mother_name)].filter(
-        (n): n is string => Boolean(n),
-      ),
-    }))
-    .filter((p) => p.names.length > 0);
+    .filter((p): p is { side: string; names: string } => Boolean(p.names));
 
-  const detailLine = (person?: typeof content.groom) =>
-    [text(person?.qualification), text(person?.occupation)].filter(Boolean).join(" · ");
+  const groomDetail = [text(content.groom_qualification), text(content.groom_occupation)]
+    .filter(Boolean)
+    .join(" · ");
+  const brideDetail = [text(content.bride_qualification), text(content.bride_occupation)]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <main className="zar-world relative min-h-screen overflow-x-hidden pb-20">
@@ -130,15 +119,18 @@ export function Invitation({ payload }: { payload: ZarPayload }) {
               {weddingDate}
             </motion.p>
           )}
+          {ceremonyTime && (
+            <p className="zar-eyebrow mt-2 text-zar-gold-soft">{ceremonyTime}</p>
+          )}
         </div>
       </section>
 
-      {(groomPhoto || bridePhoto || detailLine(content.groom) || detailLine(content.bride)) && (
+      {(groomPhoto || bridePhoto || groomDetail || brideDetail) && (
         <ArchPanel eyebrow="Two souls, one destiny" title="The Couple">
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
             {[
-              { name: groomName, photo: groomPhoto, person: content.groom },
-              { name: brideName, photo: bridePhoto, person: content.bride },
+              { name: groomName, photo: groomPhoto, detail: groomDetail },
+              { name: brideName, photo: bridePhoto, detail: brideDetail },
             ]
               .filter((p) => p.name || p.photo)
               .map((p) => (
@@ -155,9 +147,9 @@ export function Invitation({ payload }: { payload: ZarPayload }) {
                     {p.name && (
                       <p className="zar-title text-xl text-zar-ink">{p.name}</p>
                     )}
-                    {detailLine(p.person) && (
+                    {p.detail && (
                       <p className="mt-1 text-xs leading-relaxed text-zar-ink-soft">
-                        {detailLine(p.person)}
+                        {p.detail}
                       </p>
                     )}
                   </div>
@@ -167,38 +159,24 @@ export function Invitation({ payload }: { payload: ZarPayload }) {
         </ArchPanel>
       )}
 
-      {(parents.length > 0 || message || relatives.length > 0) && (
+      {(parents.length > 0 || relatives) && (
         <ArchPanel title="With the Blessings" eyebrow="Of our beloved families">
           {parents.length > 0 && (
             <div className="grid grid-cols-2 gap-5 text-center">
               {parents.map((p) => (
                 <Reveal key={p.side}>
                   <p className="zar-eyebrow text-zar-gold-deep">{p.side}</p>
-                  <div className="mt-3 space-y-1">
-                    {p.names.map((n) => (
-                      <p key={n} className="font-display text-base text-zar-ink">
-                        {n}
-                      </p>
-                    ))}
-                  </div>
+                  <p className="mt-3 font-display text-base text-zar-ink">{p.names}</p>
                 </Reveal>
               ))}
             </div>
           )}
-          {message && (
-            <>
-              <Divider />
-              <p className="mx-auto max-w-xs text-center font-display text-[1.05rem] leading-relaxed text-zar-ink-soft">
-                {message}
-              </p>
-            </>
-          )}
-          {relatives.length > 0 && (
+          {relatives && (
             <>
               <Divider />
               <p className="zar-eyebrow text-center text-zar-gold-deep">With</p>
               <p className="mt-3 text-center text-sm leading-relaxed text-zar-ink-soft">
-                {relatives.join(" · ")}
+                {relatives}
               </p>
             </>
           )}
@@ -212,18 +190,18 @@ export function Invitation({ payload }: { payload: ZarPayload }) {
               <Reveal key={`${e.title ?? e.name}-${i}`} delay={i * 0.05}>
                 <li className="relative border-l border-zar-gold-deep/40 pl-6">
                   <span className="absolute -left-[3px] top-2 size-[5px] rounded-full bg-zar-gold-deep" />
-                  <p className="zar-title text-xl text-zar-ink">{e.title ?? e.name}</p>
-                  {(formatDate(e.date) || text(e.time)) && (
+                  <p className="zar-title text-xl text-zar-ink">{e.title ?? e.name ?? e.event_name}</p>
+                  {(formatDate(e.date ?? e.event_date) || text(e.time ?? e.start_time)) && (
                     <p className="mt-1 text-xs text-zar-ink-soft">
-                      {[formatDate(e.date), text(e.time)].filter(Boolean).join(" · ")}
+                      {[formatDate(e.date ?? e.event_date), text(e.time ?? e.start_time)].filter(Boolean).join(" · ")}
                     </p>
                   )}
-                  {text(e.venue) && (
-                    <p className="mt-1 text-xs text-zar-ink-soft">{e.venue}</p>
+                  {text(e.venue ?? e.venue_name) && (
+                    <p className="mt-1 text-xs text-zar-ink-soft">{e.venue ?? e.venue_name}</p>
                   )}
-                  {text(e.description) && (
+                  {text(e.description ?? e.note) && (
                     <p className="mt-2 text-sm leading-relaxed text-zar-ink-soft">
-                      {e.description}
+                      {e.description ?? e.note}
                     </p>
                   )}
                 </li>
@@ -233,7 +211,7 @@ export function Invitation({ payload }: { payload: ZarPayload }) {
         </ArchPanel>
       )}
 
-      {(venueName || venueAddress || venueImage) && (
+      {(venueName || venueAddress || venueCity || venueImage || mapsUrl) && (
         <ArchPanel title="Venue" eyebrow="Join us at">
           {venueImage && (
             <img
@@ -286,7 +264,7 @@ export function Invitation({ payload }: { payload: ZarPayload }) {
         <RsvpMirror />
       </ArchPanel>
 
-      {(contacts.length > 0 || publicUrl) && (
+      {contacts.length > 0 && (
         <ArchPanel title="Stay Connected" eyebrow="We'd love to hear from you">
           {contacts.length > 0 && (
             <div className="space-y-4">
@@ -297,14 +275,6 @@ export function Invitation({ payload }: { payload: ZarPayload }) {
                     key={`${c.name}-${c.phone}`}
                     className="flex items-center gap-3 rounded-xl border border-zar-gold-deep/30 bg-zar-pearl/40 p-3"
                   >
-                    {text(c.photo_url) && (
-                      <img
-                        src={c.photo_url!}
-                        alt=""
-                        loading="lazy"
-                        className="size-10 rounded-full object-cover"
-                      />
-                    )}
                     <div className="min-w-0 flex-1">
                       {text(c.name) && (
                         <p className="truncate font-display text-base text-zar-ink">{c.name}</p>
@@ -332,16 +302,6 @@ export function Invitation({ payload }: { payload: ZarPayload }) {
                   </div>
                 );
               })}
-            </div>
-          )}
-
-          {publicUrl && (
-            <div className="mt-9 text-center">
-              <p className="zar-title text-xl text-zar-ink">{qrLabel}</p>
-              <p className="zar-eyebrow mt-1 text-zar-ink-soft">Scan to open</p>
-              <div className="mx-auto mt-5 w-fit rounded-xl border border-zar-gold-deep/40 bg-zar-ivory p-3">
-                <QRCodeSVG value={publicUrl} size={132} level="M" bgColor="#ffffff" fgColor="#1b1b1b" />
-              </div>
             </div>
           )}
         </ArchPanel>

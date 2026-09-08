@@ -66,12 +66,10 @@ export function ErrorState({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-export function FallbackState({ brandName }: { brandName?: string | null | undefined }) {
+export function FallbackState() {
   return (
     <Shell>
-      <h1 className="zar-title text-3xl text-zar-ivory">
-        {brandName?.trim() || "Digital Invitations"}
-      </h1>
+      <h1 className="zar-title text-3xl text-zar-ivory">Invitation Unavailable</h1>
       <p className="mt-3 text-sm leading-relaxed text-zar-ivory/70">
         This invitation is no longer available. Crafting beautiful beginnings.
       </p>

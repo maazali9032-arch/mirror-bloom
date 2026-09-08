@@ -17,26 +17,9 @@ function unwrap(value: unknown): Record<string, unknown> | null {
 }
 
 function readState(obj: Record<string, unknown>): LifecycleState {
-  const raw = (obj['state'] ?? obj['lifecycle_state'] ?? obj['status']) as string | undefined;
+  const raw = obj['state'];
   if (raw === "live" || raw === "fallback" || raw === "not_found") return raw;
   return "not_found";
-}
-
-/** Only the safe public display field provided by the central RPC contract. */
-function readBrandName(obj: Record<string, unknown>): string | null {
-  const shop = (obj['shop'] ?? obj['brand'] ?? null) as Record<string, unknown> | null;
-  const candidates = [
-    obj['brand_display_name'],
-    obj['shop_display_name'],
-    obj['shop_name'],
-    shop?.['display_name'],
-    shop?.['brand_display_name'],
-    shop?.['name'],
-  ];
-  for (const c of candidates) {
-    if (typeof c === "string" && c.trim()) return c.trim();
-  }
-  return null;
 }
 
 export async function fetchInvitation(slug: string): Promise<ZarPayload> {
@@ -56,10 +39,11 @@ export async function fetchInvitation(slug: string): Promise<ZarPayload> {
   return {
     state,
     invitation: (obj['invitation'] ?? null) as ZarPayload["invitation"],
-    content: state === "live" ? ((obj['content'] ?? null) as ZarPayload["content"]) : null,
+    content:
+      state === "live" && obj['content'] && typeof obj['content'] === "object" && !Array.isArray(obj['content'])
+        ? (obj['content'] as ZarPayload["content"])
+        : null,
     shop: (obj['shop'] ?? null) as Record<string, unknown> | null,
-    brand_display_name: readBrandName(obj),
-    raw: obj,
   };
 }
 
@@ -70,7 +54,7 @@ export function digitsOnly(phone: string): string {
 }
 
 export function whatsappHref(contact: ZarContact): string | null {
-  const supplied = contact.whatsapp_url ?? contact.whatsapp;
+  const supplied = contact.whatsapp_url;
   if (typeof supplied === "string" && /^https?:\/\//i.test(supplied.trim())) {
     return supplied.trim();
   }
@@ -83,10 +67,10 @@ export function validContacts(contacts?: ZarContact[] | null): ZarContact[] {
   return contacts.filter((c) => typeof c?.phone === "string" && c.phone.trim().length > 0).slice(0, 2);
 }
 
-export function galleryUrls(gallery?: (string | { url?: string | null })[] | null): string[] {
+export function galleryUrls(gallery?: (string | { url?: string | null; src?: string | null; image_url?: string | null })[] | null): string[] {
   if (!Array.isArray(gallery)) return [];
   return gallery
-    .map((g) => (typeof g === "string" ? g : (g?.url ?? "")))
+    .map((g) => (typeof g === "string" ? g : (g?.url ?? g?.src ?? g?.image_url ?? "")))
     .filter((u): u is string => typeof u === "string" && u.trim().length > 0);
 }
 

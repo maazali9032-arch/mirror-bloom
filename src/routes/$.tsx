@@ -5,7 +5,6 @@ import { useMemo } from "react";
 import { resolveSlug } from "@/lib/zar/slug";
 import { fetchInvitation } from "@/lib/zar/invitation";
 import { Invitation } from "@/components/zar/Invitation";
-import { BrandTicker } from "@/components/zar/BrandTicker";
 import {
   ErrorState,
   FallbackState,
@@ -52,14 +51,7 @@ function InvitationRoute() {
 
   const payload = query.data!;
   if (payload.state === "not_found") return <NotFoundState />;
-  if (payload.state === "fallback") {
-    return <FallbackState brandName={payload.brand_display_name} />;
-  }
+  if (payload.state === "fallback") return <FallbackState />;
 
-  return (
-    <>
-      <Invitation payload={payload} />
-      <BrandTicker brandName={payload.brand_display_name} />
-    </>
-  );
+  return <Invitation payload={payload} />;
 }
