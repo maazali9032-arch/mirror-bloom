@@ -1,11 +1,11 @@
 import { motion, useReducedMotion } from "motion/react";
-import { QRCodeSVG } from "qrcode.react";
 import { MapPin, Phone } from "lucide-react";
 
 import { ArchPanel, Divider } from "./ArchPanel";
 import { PalaceConstruction } from "./PalaceConstruction";
 import { RsvpMirror } from "./RsvpMirror";
 import { MusicToggle } from "./MusicToggle";
+import { BrandTicker } from "./BrandTicker";
 import {
   formatDate,
   galleryUrls,
@@ -14,6 +14,7 @@ import {
   validContacts,
   whatsappHref,
 } from "@/lib/zar/invitation";
+import defaultMusic from "@/leberch-romantic-584475.mp3";
 import type { ZarContent, ZarPayload } from "@/lib/zar/types";
 
 function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
@@ -55,7 +56,7 @@ export function Invitation({ payload }: { payload: ZarPayload }) {
   const contacts = validContacts(content.contacts);
   const publicUrl = text(payload.invitation?.public_url);
   const qrLabel = text(content.qr_text) ?? "Our Invitation";
-  const musicUrl = content.music_enabled === true ? text(content.music_url) : null;
+  const musicUrl = content.music_enabled === true ? (text(content.music_url) || defaultMusic) : null;
   const relatives = text(content.relatives);
 
   const parents = [
@@ -267,55 +268,44 @@ export function Invitation({ payload }: { payload: ZarPayload }) {
         <RsvpMirror />
       </ArchPanel>
 
-      {(contacts.length > 0 || publicUrl) && (
+      {contacts.length > 0 && (
         <ArchPanel title="Stay Connected" eyebrow="We'd love to hear from you">
-          {contacts.length > 0 && (
-            <div className="space-y-4">
-              {contacts.map((c) => {
-                const wa = whatsappHref(c);
-                return (
-                  <div
-                    key={`${c.name}-${c.phone}`}
-                    className="flex items-center gap-3 rounded-xl border border-zar-gold-deep/30 bg-zar-pearl/40 p-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      {text(c.name) && (
-                        <p className="truncate font-display text-base text-zar-ink">{c.name}</p>
-                      )}
-                      <p className="truncate text-xs text-zar-ink-soft">{c.phone}</p>
-                    </div>
-                    <a
-                      href={`tel:${c.phone}`}
-                      aria-label={c.name ? `Call ${c.name}` : "Call"}
-                      className="rounded-full bg-zar-emerald p-2 text-zar-ivory"
-                    >
-                      <Phone className="size-4" />
-                    </a>
-                    {wa && (
-                      <a
-                        href={wa}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={c.name ? `WhatsApp ${c.name}` : "WhatsApp"}
-                        className="zar-eyebrow rounded-full border border-zar-emerald/60 px-3 py-2 text-zar-emerald"
-                      >
-                        WA
-                      </a>
+          <div className="space-y-4">
+            {contacts.map((c) => {
+              const wa = whatsappHref(c);
+              return (
+                <div
+                  key={`${c.name}-${c.phone}`}
+                  className="flex items-center gap-3 rounded-xl border border-zar-gold-deep/30 bg-zar-pearl/40 p-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    {text(c.name) && (
+                      <p className="truncate font-display text-base text-zar-ink">{c.name}</p>
                     )}
+                    <p className="truncate text-xs text-zar-ink-soft">{c.phone}</p>
                   </div>
-                );
-              })}
-            </div>
-          )}
-          {publicUrl && (
-            <div className={contacts.length > 0 ? "mt-9 text-center" : "text-center"}>
-              <p className="zar-title text-xl text-zar-ink">{qrLabel}</p>
-              <p className="zar-eyebrow mt-1 text-zar-ink-soft">Scan to open</p>
-              <div className="mx-auto mt-5 w-fit rounded-xl border border-zar-gold-deep/40 bg-zar-ivory p-3">
-                <QRCodeSVG value={publicUrl} size={132} level="M" bgColor="#ffffff" fgColor="#1b1b1b" />
-              </div>
-            </div>
-          )}
+                  <a
+                    href={`tel:${c.phone}`}
+                    aria-label={c.name ? `Call ${c.name}` : "Call"}
+                    className="rounded-full bg-zar-emerald p-2 text-zar-ivory"
+                  >
+                    <Phone className="size-4" />
+                  </a>
+                  {wa && (
+                    <a
+                      href={wa}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={c.name ? `WhatsApp ${c.name}` : "WhatsApp"}
+                      className="zar-eyebrow rounded-full border border-zar-emerald/60 px-3 py-2 text-zar-emerald"
+                    >
+                      WA
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </ArchPanel>
       )}
 
@@ -327,6 +317,8 @@ export function Invitation({ payload }: { payload: ZarPayload }) {
           Jazakallah khair for your love and dua
         </p>
       </section>
+
+      <BrandTicker brandName={payload.shop?.name} />
     </main>
   );
 }

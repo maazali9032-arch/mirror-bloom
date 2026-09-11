@@ -13,6 +13,23 @@ export function MusicToggle({ url }: { url: string }) {
     };
   }, []);
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const el = audioRef.current;
+      if (!el) return;
+      if (document.hidden) {
+        el.pause();
+      } else {
+        if (playing) {
+          void el.play().catch(() => setPlaying(false));
+        }
+      }
+    };
+    
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [playing]);
+
   const toggle = () => {
     if (!audioRef.current) {
       const el = new Audio(url);

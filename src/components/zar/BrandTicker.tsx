@@ -21,9 +21,9 @@ export function BrandTicker({ brandName }: { brandName?: string | null | undefin
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed left-0 right-0 top-[70svh] z-40 select-none"
+      className="pointer-events-none fixed bottom-0 left-0 right-0 z-40 select-none"
     >
-      <div className="mx-auto max-w-4xl overflow-hidden border-y border-zar-gold/25 bg-zar-night/20 py-[0.15rem] backdrop-blur-[1px] sm:py-[0.2rem]">
+      <div className="mx-auto max-w-4xl overflow-hidden border-t border-zar-gold/25 bg-zar-night/20 py-[0.15rem] backdrop-blur-[1px] sm:py-[0.2rem]">
         <div className="zar-marquee-track flex w-[200%] items-center">
           <div className="flex w-1/2 items-center">{run}</div>
           <div className="flex w-1/2 items-center">
